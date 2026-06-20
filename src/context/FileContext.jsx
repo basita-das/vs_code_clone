@@ -4,22 +4,32 @@ const FileContext = createContext();
 
 export const FileProvider = ({ children }) => {
   const [fileTree, setFileTree] = useState(null);
-  const [openFiles, setOpenFiles] = useState([]); // Array of open tabs
-  const [activeFile, setActiveFile] = useState(null); // Currently viewed tab
+  const [openFiles, setOpenFiles] = useState([]);
+  const [activeFile, setActiveFile] = useState(null);
+  const [dirtyFiles, setDirtyFiles] = useState(new Set());
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const openFolder = async () => {
     const tree = await window.electronAPI.openFolder();
-    if (tree) setFileTree(tree);
+    if (tree) {
+      setFileTree(tree);
+      setIsSidebarOpen(true);
+    }
+  };
+
+  const closeFolder = () => {
+    setFileTree(null);
+    setOpenFiles([]);
+    setActiveFile(null);
+    setDirtyFiles(new Set());
   };
 
   const selectFile = async (file) => {
     if (file.type === "directory") return;
-
-    // Check if file is already open
-    const existingFile = openFiles.find((f) => f.path === file.path);
-
-    if (existingFile) {
-      setActiveFile(existingFile);
+    const existing = openFiles.find((f) => f.path === file.path);
+    if (existing) {
+      setActiveFile(existing);
     } else {
       const content = await window.electronAPI.readFile(file.path);
       const newFile = { ...file, content };
@@ -29,21 +39,22 @@ export const FileProvider = ({ children }) => {
   };
 
   const closeFile = (e, path) => {
-    e.stopPropagation(); // Prevent switching to the tab we are closing
-    const newOpenFiles = openFiles.filter((f) => f.path !== path);
-    setOpenFiles(newOpenFiles);
-
-    // If we closed the active tab, switch to another one
+    e.stopPropagation();
+    const filtered = openFiles.filter((f) => f.path !== path);
+    setOpenFiles(filtered);
+    setDirtyFiles((prev) => {
+      const n = new Set(prev);
+      n.delete(path);
+      return n;
+    });
     if (activeFile?.path === path) {
-      setActiveFile(
-        newOpenFiles.length > 0 ? newOpenFiles[newOpenFiles.length - 1] : null,
-      );
+      setActiveFile(filtered.length > 0 ? filtered[filtered.length - 1] : null);
     }
   };
 
   const updateFileContent = (content) => {
     if (!activeFile) return;
-    // Update both the active file and its version in the openFiles array
+    setDirtyFiles((prev) => new Set(prev).add(activeFile.path));
     setActiveFile((prev) => ({ ...prev, content }));
     setOpenFiles((prev) =>
       prev.map((f) => (f.path === activeFile.path ? { ...f, content } : f)),
@@ -56,7 +67,11 @@ export const FileProvider = ({ children }) => {
       filePath: activeFile.path,
       content: activeFile.content,
     });
-    console.log("Saved:", activeFile.name);
+    setDirtyFiles((prev) => {
+      const n = new Set(prev);
+      n.delete(activeFile.path);
+      return n;
+    });
   };
 
   return (
@@ -65,7 +80,13 @@ export const FileProvider = ({ children }) => {
         fileTree,
         openFiles,
         activeFile,
+        dirtyFiles,
+        isPaletteOpen,
+        isSidebarOpen,
+        setIsPaletteOpen,
+        setIsSidebarOpen,
         openFolder,
+        closeFolder,
         selectFile,
         closeFile,
         updateFileContent,
