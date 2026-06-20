@@ -1,10 +1,32 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import path from "path";
+import fs from "fs/promises";
 import { fileURLToPath } from "url";
 
-// --- Fix for __dirname in ES Modules ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+async function buildFileTree(dirPath) {
+  const stats = await fs.stat(dirPath);
+  const name = path.basename(dirPath);
+  if (stats.isFile()) return { id: dirPath, name, type: "file", path: dirPath };
+
+  const children = await fs.readdir(dirPath);
+  const childNodes = await Promise.all(
+    children
+      .filter((child) => !child.startsWith(".") && child !== "node_modules")
+      .map((child) =>
+        buildFileTree(path.join(dirPath, child)).catch(() => null),
+      ),
+  );
+  return {
+    id: dirPath,
+    name,
+    type: "directory",
+    path: dirPath,
+    children: childNodes.filter(Boolean),
+  };
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -18,22 +40,26 @@ function createWindow() {
       contextIsolation: true,
     },
   });
-
-  // Load the Vite development server
   win.loadURL("http://localhost:5173");
-
-  // Open DevTools automatically so we can see any errors
-  // win.webContents.openDevTools();
 }
 
-app.whenReady().then(() => {
-  createWindow();
-
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+// Register Handlers
+ipcMain.handle("dialog:openDirectory", async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ["openDirectory"],
   });
+  if (canceled) return null;
+  return await buildFileTree(filePaths[0]);
 });
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+ipcMain.handle(
+  "file:read",
+  async (e, path) => await fs.readFile(path, "utf-8"),
+);
+ipcMain.handle("file:save", async (e, { filePath, content }) => {
+  await fs.writeFile(filePath, content, "utf-8");
+  return true;
 });
+
+app.whenReady().then(createWindow);
+app.on("window-all-closed", () => process.platform !== "darwin" && app.quit());

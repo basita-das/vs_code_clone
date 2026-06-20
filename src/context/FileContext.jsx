@@ -1,47 +1,34 @@
-//This file handles which file is open and what its content is.
-
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext } from 'react';
 
 const FileContext = createContext();
 
-const initialFiles = [
-  {
-    id: "1",
-    name: "index.html",
-    language: "html",
-    content: "<h1>Hello World</h1>",
-  },
-  {
-    id: "2",
-    name: "style.css",
-    language: "css",
-    content: "body { color: red; }",
-  },
-  {
-    id: "3",
-    name: "script.js",
-    language: "javascript",
-    content: 'console.log("Hello VS Code!");',
-  },
-];
-
 export const FileProvider = ({ children }) => {
-  const [files, setFiles] = useState(initialFiles);
-  const [activeFile, setActiveFile] = useState(initialFiles[0]);
+  const [fileTree, setFileTree] = useState(null);
+  const [activeFile, setActiveFile] = useState(null);
 
-  const updateFileContent = (newContent) => {
-    setFiles((prev) =>
-      prev.map((f) =>
-        f.id === activeFile.id ? { ...f, content: newContent } : f,
-      ),
-    );
-    setActiveFile((prev) => ({ ...prev, content: newContent }));
+  const openFolder = async () => {
+    const tree = await window.electronAPI.openFolder();
+    if (tree) setFileTree(tree);
+  };
+
+  const selectFile = async (file) => {
+    if (file.type === 'directory') return;
+    const content = await window.electronAPI.readFile(file.path);
+    setActiveFile({ ...file, content });
+  };
+
+  const updateFileContent = (content) => {
+    setActiveFile(prev => ({ ...prev, content }));
+  };
+
+  const saveActiveFile = async () => {
+    if (!activeFile) return;
+    await window.electronAPI.saveFile({ filePath: activeFile.path, content: activeFile.content });
+    console.log("Saved!");
   };
 
   return (
-    <FileContext.Provider
-      value={{ files, activeFile, setActiveFile, updateFileContent }}
-    >
+    <FileContext.Provider value={{ fileTree, activeFile, openFolder, selectFile, updateFileContent, saveActiveFile }}>
       {children}
     </FileContext.Provider>
   );
