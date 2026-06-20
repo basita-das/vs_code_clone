@@ -38,7 +38,7 @@ const Sidebar = () => {
         <div
           onClick={() => (isFile ? selectFile(node) : null)}
           style={{ paddingLeft: `${depth * 12 + 12}px` }}
-          className={`flex items-center py-[2px] cursor-pointer text-sm hover:bg-[#2a2d2e] ${activeFile?.path === node.path ? "bg-[#37373d] text-white" : "text-gray-400"}`}
+          className={`flex items-center py-0.5 cursor-pointer text-sm hover:bg-[#2a2d2e] ${activeFile?.path === node.path ? "bg-[#37373d] text-white" : "text-gray-400"}`}
         >
           {!isFile ? (
             <ChevronDown size={14} className="mr-1" />

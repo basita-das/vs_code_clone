@@ -13,12 +13,12 @@ const CommandPalette = () => {
   ];
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-center pt-2">
+    <div className="fixed inset-0 z-100 flex justify-center pt-2">
       <div
         className="absolute inset-0 bg-black/50"
         onClick={() => setIsPaletteOpen(false)}
       />
-      <div className="relative w-[600px] bg-[#252526] shadow-2xl border border-[#454545] rounded-lg overflow-hidden h-fit">
+      <div className="relative w-150 bg-[#252526] shadow-2xl border border-[#454545] rounded-lg overflow-hidden h-fit">
         <input
           autoFocus
           placeholder="Type a command or search..."

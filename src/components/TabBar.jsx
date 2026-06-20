@@ -15,7 +15,7 @@ const TabBar = () => {
           <div
             key={file.path}
             onClick={() => setActiveFile(file)}
-            className={`group flex items-center h-full px-3 min-w-[120px] max-w-[200px] border-r border-black cursor-pointer text-sm ${isActive ? "bg-[#1e1e1e] text-white border-t border-t-[#007acc]" : "bg-[#2d2d2d] text-gray-400"}`}
+            className={`group flex items-center h-full px-3 min-w-30 max-w-50 border-r border-black cursor-pointer text-sm ${isActive ? "bg-[#1e1e1e] text-white border-t border-t-[#007acc]" : "bg-[#2d2d2d] text-gray-400"}`}
           >
             <span className="mr-2">{getFileIcon(file.name)}</span>
             <span
