@@ -2,12 +2,22 @@ import ActivityBar from "./components/ActivityBar";
 import Sidebar from "./components/Sidebar";
 import EditorContainer from "./components/EditorContainer";
 import { FileProvider } from "./context/FileContext";
+import { useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+    if (window.electronAPI) {
+      console.log("Desktop Mode Active!");
+    }
+  }, []);
   return (
     <FileProvider>
       {/* Main Container: Full screen height, vertical flex */}
       <div className="flex flex-col h-screen w-full bg-[#1e1e1e] overflow-hidden text-white">
+        <div
+          className="h-3 w-full bg-[#333333] drag-region"
+          style={{ WebkitAppRegion: "drag" }}
+        ></div>
         {/* Top Section: Activity Bar + Sidebar + Editor */}
         <div className="flex flex-1 overflow-hidden">
           <ActivityBar />
